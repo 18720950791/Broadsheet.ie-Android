@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where mvn:*)",
+      "Bash(where java:*)",
+      "Bash(java -version)",
+      "Bash(ls D:/alicode/ali/repo-24/qwen2/mvnw*)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Users/ouyang/**)",
+      "Read(//c/Users/**)",
+      "Bash(D:/apache-maven-3.6.2/bin/mvn.cmd -f D:/alicode/ali/repo-24/qwen2/pom.xml test -pl .)",
+      "Read(//d/maven/junit/junit/**)",
+      "Read(//d/maven/**)",
+      "Bash(mkdir -p /tmp/tipdialog-test/ie/broadsheet/app/dialog)",
+      "Bash(cp D:/alicode/ali/repo-24/qwen2/test/ie/broadsheet/app/dialog/TipDialogTest.java /tmp/tipdialog-test/ie/broadsheet/app/dialog/)",
+      "Read(//d/tmp/tipdialog-test/**)",
+      "Bash(javac -d . -cp \"D:/maven/junit/junit/4.13.2/junit-4.13.2.jar:D:/maven/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar\" ie/broadsheet/app/dialog/TipDialog.java ie/broadsheet/app/dialog/TipDialogTest.java)",
+      "Bash(java -cp \".:D:/maven/junit/junit/4.13.2/junit-4.13.2.jar:D:/maven/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar\" org.junit.runner.JUnitCore ie.broadsheet.app.dialog.TipDialogTest)",
+      "Bash(javac -d . -cp \"D:\\\\maven\\\\junit\\\\junit\\\\4.13.2\\\\junit-4.13.2.jar;D:\\\\maven\\\\org\\\\hamcrest\\\\hamcrest-core\\\\1.3\\\\hamcrest-core-1.3.jar\" \"ie/broadsheet/app/dialog/TipDialog.java\" \"ie/broadsheet/app/dialog/TipDialogTest.java\")",
+      "Bash(javac -d classes -cp \"D:/maven/junit/junit/4.13.2/junit-4.13.2.jar;D:/maven/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar\" ie/broadsheet/app/dialog/TipDialog.java ie/broadsheet/app/dialog/TipDialogTest.java)",
+      "Bash(mkdir:*)",
+      "Bash(javac -encoding UTF-8 -d classes -cp \"D:/maven/junit/junit/4.13.2/junit-4.13.2.jar;D:/maven/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar\" ie/broadsheet/app/dialog/TipDialog.java ie/broadsheet/app/dialog/TipDialogTest.java)",
+      "Bash(java -cp \"classes;D:/maven/junit/junit/4.13.2/junit-4.13.2.jar;D:/maven/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar\" org.junit.runner.JUnitCore ie.broadsheet.app.dialog.TipDialogTest)"
+    ]
+  }
+}

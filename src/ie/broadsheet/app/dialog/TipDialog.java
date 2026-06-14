@@ -42,6 +42,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
+import android.widget.Toast;
 
 import com.octo.android.robospice.persistence.exception.SpiceException;
 import com.octo.android.robospice.request.listener.RequestListener;
@@ -237,44 +238,128 @@ public class TipDialog extends DialogFragment implements android.view.View.OnCli
         }
     }
 
+    /**
+     * Maximum dimension (in pixels) used as a safety cap when the view has not
+     * been laid out yet, preventing accidental decoding of a huge original.
+     */
+    static final int MAX_FALLBACK_DIMENSION = 1024;
+
+    /**
+     * Calculate the {@code inSampleSize} for decoding a bitmap so that it fits
+     * within the given target dimensions while preserving the aspect ratio.
+     * <p>
+     * Returns 1 (no sub-sampling) when any dimension is &le;&nbsp;0 so that
+     * callers never hit a divide-by-zero.
+     *
+     * @param photoW  original image width in pixels
+     * @param photoH  original image height in pixels
+     * @param targetW desired target width  (may be 0 if unknown)
+     * @param targetH desired target height (may be 0 if unknown)
+     * @return a positive {@code inSampleSize} (&ge;&nbsp;1)
+     */
+    static int calculateInSampleSize(int photoW, int photoH, int targetW, int targetH) {
+        if (photoW <= 0 || photoH <= 0 || targetW <= 0 || targetH <= 0) {
+            return 1;
+        }
+        int sampleW = photoW / targetW;
+        int sampleH = photoH / targetH;
+        int sample = Math.min(sampleW, sampleH);
+        return Math.max(sample, 1);
+    }
+
     public void showImage() {
-        ImageView imageView = (ImageView) getDialog().findViewById(R.id.sumbitorImage);
+        if (mPicturePath == null) {
+            Log.w(TAG, "showImage() called with null mPicturePath");
+            return;
+        }
+
+        final ImageView imageView = (ImageView) getDialog().findViewById(R.id.sumbitorImage);
+
+        /* Get the size of the image (bounds-only decode) */
+        BitmapFactory.Options boundsOptions = new BitmapFactory.Options();
+        boundsOptions.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(mPicturePath, boundsOptions);
+        int photoW = boundsOptions.outWidth;
+        int photoH = boundsOptions.outHeight;
+
+        /* Guard against an invalid / corrupt image file */
+        if (photoW <= 0 || photoH <= 0) {
+            Log.w(TAG, "showImage(): unable to determine image dimensions for " + mPicturePath);
+            return;
+        }
 
         int targetW = imageView.getWidth();
         int targetH = imageView.getHeight();
 
-        /* Get the size of the image */
-        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-        bmOptions.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(mPicturePath, bmOptions);
-        int photoW = bmOptions.outWidth;
-        int photoH = bmOptions.outHeight;
-
-        /* Figure out which way needs to be reduced less */
-        int scaleFactor = 1;
-        if ((targetW > 0) || (targetH > 0)) {
-            scaleFactor = Math.min(photoW / targetW, photoH / targetH);
+        /*
+         * If the view has not been laid out yet (both dimensions are 0),
+         * defer the preview until after layout so we can use real sizes.
+         * Fall back to a safe cap to avoid decoding a huge original.
+         */
+        if (targetW <= 0 && targetH <= 0) {
+            Log.d(TAG, "showImage(): view not laid out yet, deferring");
+            final int safeW = photoW > MAX_FALLBACK_DIMENSION ? MAX_FALLBACK_DIMENSION : photoW;
+            final int safeH = photoH > MAX_FALLBACK_DIMENSION ? MAX_FALLBACK_DIMENSION : photoH;
+            imageView.post(new Runnable() {
+                @Override
+                public void run() {
+                    /* Re-enter; this time the view should have real dimensions.
+                     * If it still doesn't, calculateInSampleSize() will use the
+                     * safe fallback values we supply below. */
+                    int w = imageView.getWidth();
+                    int h = imageView.getHeight();
+                    if (w <= 0 && h <= 0) {
+                        /* Still no layout – decode with safe cap */
+                        decodeAndSetImage(imageView, photoW, photoH, safeW, safeH);
+                    } else {
+                        decodeAndSetImage(imageView, photoW, photoH, w, h);
+                    }
+                }
+            });
+            return;
         }
 
-        /* Set bitmap options to scale the image decode target */
+        decodeAndSetImage(imageView, photoW, photoH, targetW, targetH);
+    }
+
+    private void decodeAndSetImage(ImageView imageView, int photoW, int photoH,
+                                   int targetW, int targetH) {
+        int scaleFactor = calculateInSampleSize(photoW, photoH, targetW, targetH);
+
+        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
         bmOptions.inJustDecodeBounds = false;
         bmOptions.inSampleSize = scaleFactor;
         bmOptions.inPurgeable = true;
 
-        /* Decode the JPEG file into a Bitmap */
         Bitmap bitmap = BitmapFactory.decodeFile(mPicturePath, bmOptions);
+
+        if (bitmap == null) {
+            Log.w(TAG, "decodeAndSetImage(): failed to decode " + mPicturePath);
+            return;
+        }
 
         imageView.setImageBitmap(bitmap);
         imageView.setScaleType(ScaleType.CENTER_INSIDE);
     }
 
     protected void selectImage() {
-        File tempFile = null;
+        File tempFile;
         try {
             tempFile = createImageFile();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Log.e(TAG, "Failed to create image file", e);
+            Toast.makeText(getActivity(),
+                    R.string.error_image_file_creation,
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        if (tempFile == null) {
+            Log.e(TAG, "createImageFile() returned null");
+            Toast.makeText(getActivity(),
+                    R.string.error_image_file_creation,
+                    Toast.LENGTH_LONG).show();
+            return;
         }
 
         mCurrentPhotoPath = tempFile.getAbsolutePath();

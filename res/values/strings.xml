@@ -50,4 +50,5 @@
 	<string name="app_feedback_body" formatted="false">App Version:%s\nAndroid version:%s\n</string>
 	<string name="downloadingFile">Downloading file..</string>
 	<string name="selectGallery">Select Picture</string>
+	<string name="error_image_file_creation">Unable to create a temporary image file. Please check storage and try again.</string>
 </resources>
