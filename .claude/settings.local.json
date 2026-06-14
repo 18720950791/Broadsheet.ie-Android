@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn -v)",
+      "Bash(find . -name *Test.java -o -name Test*.java)",
+      "Bash(javac -version)",
+      "Bash(java -version)",
+      "Bash(find ~/.m2 -path *com/google/android/android* -name *.jar)"
+    ]
+  }
+}

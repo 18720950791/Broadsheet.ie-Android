@@ -51,6 +51,14 @@ public class TipDialog extends DialogFragment implements android.view.View.OnCli
 
     private static final int IMAGE_REQUEST_CODE = 1000;
 
+    /**
+     * Fallback target dimension (px) used when the preview {@link ImageView} has
+     * not been laid out yet. Decoding an arbitrarily large source image at 1:1
+     * risks an {@link OutOfMemoryError}, so we cap the effective target size
+     * instead of decoding the full-resolution original.
+     */
+    static final int SAFE_TARGET_DIMENSION = 1024;
+
     public static final String CURRENT_IMAGE_FILENAME = "image_filename";
 
     private EditText mName;
@@ -250,11 +258,23 @@ public class TipDialog extends DialogFragment implements android.view.View.OnCli
         int photoW = bmOptions.outWidth;
         int photoH = bmOptions.outHeight;
 
-        /* Figure out which way needs to be reduced less */
-        int scaleFactor = 1;
-        if ((targetW > 0) || (targetH > 0)) {
-            scaleFactor = Math.min(photoW / targetW, photoH / targetH);
+        /*
+         * If the file could not be decoded as an image BitmapFactory reports its
+         * bounds as -1. There is nothing to preview, so bail out rather than
+         * feeding invalid dimensions into the scale calculation.
+         */
+        if (photoW <= 0 || photoH <= 0) {
+            Log.d(TAG, "Unable to decode image for preview: " + mPicturePath);
+            return;
         }
+
+        /*
+         * Figure out which way needs to be reduced less. calculateInSampleSize()
+         * never divides by zero and falls back to a safe target size when the
+         * ImageView has not been laid out yet (targetW/targetH == 0), so we never
+         * decode the full-resolution original into memory.
+         */
+        int scaleFactor = calculateInSampleSize(photoW, photoH, targetW, targetH);
 
         /* Set bitmap options to scale the image decode target */
         bmOptions.inJustDecodeBounds = false;
@@ -268,13 +288,64 @@ public class TipDialog extends DialogFragment implements android.view.View.OnCli
         imageView.setScaleType(ScaleType.CENTER_INSIDE);
     }
 
+    /**
+     * Computes a safe {@link BitmapFactory.Options#inSampleSize} for decoding a
+     * source image of {@code photoW}x{@code photoH} into a view of
+     * {@code targetW}x{@code targetH}.
+     *
+     * <p>
+     * The return value is always {@code >= 1} and the method never divides by
+     * zero:
+     * <ul>
+     * <li>If the source dimensions are invalid ({@code <= 0}, e.g. the file is
+     * not a decodable image) it returns {@code 1}.</li>
+     * <li>If the target dimensions are invalid ({@code <= 0}, e.g. the view has
+     * not been laid out yet) it falls back to {@link #SAFE_TARGET_DIMENSION} so
+     * an oversized original is still down-sampled instead of decoded at full
+     * resolution.</li>
+     * </ul>
+     */
+    static int calculateInSampleSize(int photoW, int photoH, int targetW, int targetH) {
+        if (photoW <= 0 || photoH <= 0) {
+            return 1;
+        }
+
+        if (targetW <= 0) {
+            targetW = SAFE_TARGET_DIMENSION;
+        }
+        if (targetH <= 0) {
+            targetH = SAFE_TARGET_DIMENSION;
+        }
+
+        int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
+
+        return Math.max(1, scaleFactor);
+    }
+
+    /**
+     * @return {@code true} when {@code imageFile} can be used as the camera
+     *         capture output. When this returns {@code false} the caller must
+     *         abort the selection flow instead of dereferencing the file or
+     *         building a capture Intent.
+     */
+    static boolean isUsableImageFile(File imageFile) {
+        return imageFile != null;
+    }
+
     protected void selectImage() {
         File tempFile = null;
         try {
             tempFile = createImageFile();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Log.e(TAG, "Failed to create image file for capture", e);
+        }
+
+        if (!isUsableImageFile(tempFile)) {
+            // Creating the temp file failed: stop here and tell the user rather
+            // than NPEing on tempFile.getAbsolutePath() or launching a capture
+            // Intent that has nowhere to write its result.
+            showImageError();
+            return;
         }
 
         mCurrentPhotoPath = tempFile.getAbsolutePath();
@@ -300,6 +371,10 @@ public class TipDialog extends DialogFragment implements android.view.View.OnCli
         final Intent chooserIntent = Intent.createChooser(pickPhoto, getResources().getString(R.string.selectGallery));
         chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, cameraIntents.toArray(new Parcelable[] {}));
         startActivityForResult(chooserIntent, IMAGE_REQUEST_CODE);
+    }
+
+    private void showImageError() {
+        ((BaseFragmentActivity) getActivity()).showError(getResources().getString(R.string.error_image_file));
     }
 
     private File getAlbumDir() {
