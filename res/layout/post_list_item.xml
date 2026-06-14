@@ -1,0 +1,56 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/abs__action_bar_default_height"
+    android:orientation="vertical"
+    android:paddingLeft="@dimen/standard_margin"
+    android:paddingRight="@dimen/standard_margin" >
+
+    <TextView
+        android:id="@+id/post_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="@dimen/post_title"
+        android:textStyle="bold" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <TextView
+            android:id="@+id/post_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:text=""
+            android:textColor="@color/red" />
+
+        <TextView
+            android:id="@+id/comment_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:text="" />
+    </RelativeLayout>
+
+    <ImageView
+        android:id="@+id/featuredImage"
+        android:layout_width="@dimen/large_post_image_width"
+        android:layout_height="@dimen/large_post_image_height"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="@dimen/standard_margin"
+        android:background="@drawable/image_border"
+        android:contentDescription="@string/large_post_image"
+        android:cropToPadding="true"
+        android:maxHeight="@dimen/large_post_image_height"
+        android:maxWidth="@dimen/large_post_image_width"
+        android:minHeight="@dimen/large_post_image_height"
+        android:minWidth="@dimen/large_post_image_width"
+        android:padding="1dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/default_post_image" />
+
+</LinearLayout>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="apiURL">http://www.broadsheet.ie</string>
+
+    <string name="app_name">Broadsheet.ie</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_posts">PostsActivity</string>
+    <string name="title_post_list">Posts</string>
+    <string name="title_post_detail">Post Detail</string>
+    <string name="load_more">Loading</string>
+    <string name="large_post_image">Feature image for the post</string>
+    <string name="action_label_refresh">Refresh</string>
+    <string name="action_label_about">About</string>
+    <string name="action_label_compose">Compose</string>
+    <string name="action_label_search">Search</string>
+    <string name="action_label_tip">Send tip</string>
+	<string name="action_label_about">About</string>
+	<string name="action_label_comments">Comments</string>
+    <string name="title_activity_comment_list">CommentListActivity</string>
+	<string name="share_label">Share</string>
+	<string name="user_avatar">User avatar</string>
+	<string name="comment">Comment</string>
+	<string name="okay">Okay</string>
+	<string name="cancel">Cancel</string>
+	<string name="commenter_name_hint">Your name</string>
+	<string name="commenter_email">Your email address</string>
+	<string name="about_title">About</string>
+	<string name="searching">Searching</string>
+	<string name="add_image_buton">Add Image</string>
+	<string name="submit_body_hint">What do you want to let us know about?</string>
+	<string name="submit_tip">Submit Tip</string>
+	<string name="upload_image_hint">Upload an image</string>
+	<string name="commenter_url_hint">Your website</string>
+	<string name="error_no_name">Please enter a name</string>
+	<string name="error_no_email">Please enter an email address</string>
+	<string name="error_no_message">Please enter a message</string>
+	<string name="posting_comment">Posting comment</string>
+	<string name="posting_tip">Posting tip</string>
+	<string name="loading">Loading</string>
+	<string name="reply">Reply</string>
+	<string name="next">Next</string>
+	<string name="previous">Previous</string>
+	<string name="post_load_problem">There was a problem loading the post.</string>
+	<string name="post_list_load_problem">There was a problem loading the list of posts. Please try again in a minute.</string>
+	<string name="tip_submit_problem">There was a problem submitting the tip. Please try again in a minute.</string>
+	<string name="post_list_no_matching_posts">No posts! Try searching with another term.</string>
+	<string name="no_image_picked">We love images! Would you like to include one with your tip?</string>
+	<string name="no_thanks">No, send the tip</string>
+	<string name="add_an_image">Add an image</string>
+	<string name="app_feedback_body" formatted="false">App Version:%s\nAndroid version:%s\n</string>
+	<string name="downloadingFile">Downloading file..</string>
+	<string name="selectGallery">Select Picture</string>
+</resources>

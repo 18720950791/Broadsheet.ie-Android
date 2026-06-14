@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="ie.broadsheet.app"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk
+        android:minSdkVersion="8"
+        android:targetSdkVersion="17" />
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+	
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    
+    <application
+        android:name="ie.broadsheet.app.BroadsheetApplication"
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+        <activity
+            android:name="ie.broadsheet.app.PostListActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name="ie.broadsheet.app.services.BroadsheetServices"
+            android:exported="false" />
+
+        <activity
+            android:name="ie.broadsheet.app.PostDetailActivity"
+            android:label="@string/title_post_detail"
+            android:parentActivityName=".PostListActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".PostListActivity" />
+        </activity>
+        <activity
+            android:name="ie.broadsheet.app.CommentListActivity"
+            android:label="@string/title_activity_comment_list" >
+        </activity>
+        <meta-data android:name="com.crashlytics.ApiKey" android:value="1b5e41ad9a5dcccd4e157158af5242bfdc7fe671"/>
+    </application>
+
+</manifest>
