@@ -23,15 +23,12 @@ public class PostListEndlessAdapter extends EndlessAdapter {
 
     private static final String TAG = "PostListEndlessAdapter";
 
-    private boolean hasMore = true;
-
     private boolean loaded = false;
-
-    private int currentPage = 0;
 
     private String searchTerm;
 
-    private PostListRequest postListRequest;
+    /** Page/request lifecycle state machine. Kept Android-free so it can be unit tested. */
+    private final PostListPager pager = new PostListPager();
 
     public PostListEndlessAdapter(Context context) {
         super(context, new PostListAdapter(context), R.layout.post_list_load_more);
@@ -41,12 +38,11 @@ public class PostListEndlessAdapter extends EndlessAdapter {
 
     @Override
     protected boolean cacheInBackground() throws Exception {
-        if (hasMore) {
-            currentPage++;
-            fetchPosts();
-        }
+        fetchPosts();
 
-        return hasMore;
+        // Keep the "load more" footer while more pages may exist (including while a request is
+        // in flight or after a failure that can be retried).
+        return pager.hasMore();
     }
 
     @Override
@@ -71,7 +67,7 @@ public class PostListEndlessAdapter extends EndlessAdapter {
     }
 
     public int getCurrentPage() {
-        return currentPage;
+        return pager.getLoadedPage();
     }
 
     public PostListLoadedListener getPostListLoadedListener() {
@@ -84,23 +80,29 @@ public class PostListEndlessAdapter extends EndlessAdapter {
 
     public void reset() {
         loaded = false;
-        hasMore = true;
         searchTerm = null;
-        currentPage = 1;
+        // Start again from page 1 and invalidate any request that is still in flight so its
+        // late-arriving result cannot corrupt the reset state.
+        pager.reset();
     }
 
     public void fetchPosts() {
-        if (postListRequest == null) {
-            postListRequest = new PostListRequest();
+        PostListPager.RequestToken token = pager.beginRequest();
 
-            postListRequest.setPage(currentPage);
-            postListRequest.setSearchTerm(searchTerm);
-
-            BaseFragmentActivity activity = (BaseFragmentActivity) getContext();
-
-            activity.getSpiceManager().execute(postListRequest, postListRequest.generateUrl(),
-                    DurationInMillis.ONE_MINUTE, new PostListListener());
+        if (token == null) {
+            // A request is already in flight, or there are no more pages to load.
+            return;
         }
+
+        PostListRequest postListRequest = new PostListRequest();
+
+        postListRequest.setPage(token.getPage());
+        postListRequest.setSearchTerm(searchTerm);
+
+        BaseFragmentActivity activity = (BaseFragmentActivity) getContext();
+
+        activity.getSpiceManager().execute(postListRequest, postListRequest.generateUrl(),
+                DurationInMillis.ONE_MINUTE, new PostListListener(token));
     }
 
     // ============================================================================================
@@ -109,15 +111,26 @@ public class PostListEndlessAdapter extends EndlessAdapter {
 
     public final class PostListListener implements RequestListener<PostList> {
 
+        private final PostListPager.RequestToken token;
+
+        public PostListListener(PostListPager.RequestToken token) {
+            this.token = token;
+        }
+
         @Override
         public void onRequestFailure(SpiceException spiceException) {
             Log.d(TAG, "Failed to get results");
 
-            BaseFragmentActivity activity = (BaseFragmentActivity) getContext();
+            if (!pager.onFailure(token)) {
+                // Result belongs to a request that was superseded by a reset(); ignore it.
+                return;
+            }
 
-            hasMore = false;
+            // Page number is left untouched and there may still be more pages, so the user can
+            // retry the same page from the "load more" footer.
             onDataReady();
 
+            BaseFragmentActivity activity = (BaseFragmentActivity) getContext();
             activity.showError(activity.getString(R.string.post_list_load_problem));
         }
 
@@ -125,13 +138,18 @@ public class PostListEndlessAdapter extends EndlessAdapter {
         public void onRequestSuccess(final PostList result) {
             Log.d(TAG, "we got results");
 
-            loaded = true;
+            boolean moreAvailable = (result.getCount_total() > result.getCount());
 
-            hasMore = (result.getCount_total() > result.getCount());
+            if (!pager.onSuccess(token, moreAvailable)) {
+                // Result belongs to a request that was superseded by a reset(); ignore it.
+                return;
+            }
+
+            loaded = true;
 
             BroadsheetApplication app = (BroadsheetApplication) PostListEndlessAdapter.this.getContext()
                     .getApplicationContext();
-            if (PostListEndlessAdapter.this.currentPage == 1) {
+            if (pager.getLoadedPage() == 1) {
                 app.setPosts(null);
                 ((PostListAdapter) getWrappedAdapter()).clear();
             }
@@ -146,11 +164,9 @@ public class PostListEndlessAdapter extends EndlessAdapter {
 
             onDataReady();
 
-            postListRequest = null;
-
             PostListEndlessAdapter.this.postListLoadedListener.onPostListLoaded();
 
-            app.getTracker().sendView("Post List Page" + Integer.toString(PostListEndlessAdapter.this.currentPage));
+            app.getTracker().sendView("Post List Page" + Integer.toString(pager.getLoadedPage()));
 
             if (result.getCount_total() == 0) {
                 BaseFragmentActivity activity = (BaseFragmentActivity) getContext();
